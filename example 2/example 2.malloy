@@ -1,0 +1,46 @@
+
+
+source: project is duckdb.table('./example 2/dim_project.csv')
+extend {
+    primary_key: pk
+}
+source: opportunity is duckdb.table('./example 2/dim_opportunity.csv')
+extend {
+    primary_key: pk
+}
+
+source: revenue_forecast is duckdb.table('./example 2/dim_date_snapshot.csv')
+extend {
+    dimension: 
+        forecast_date is date_day::date
+    measure:
+        project_secured_revenue is project.project_remaining_budget_daily.sum()
+        opportunity_secured_revenue is opportunity.opportunity_remaining_weighted_amount_daily.sum() {where: opportunity.project_pk is null}
+    join_many: 
+        project on (forecast_date ? project.project_start_date_adjusted to (project.project_end_date + 1 day)) 
+        opportunity on (forecast_date ? opportunity.opportunity_expected_project_start_date_adjusted to (opportunity.opportunity_expected_project_end_date + 1 day))
+    view:
+        month_agg_incorrect is {
+            group_by: forecast_date.month
+            aggregate:
+                //Value for each is 1 (incorrect)
+                opportunity_secured_revenue
+                project_secured_revenue
+            order_by: forecast_date
+
+        }
+        month_agg_correct_1 is {
+            group_by: forecast_date.month
+            aggregate:
+                //Value is 2
+                opportunity_secured_revenue
+            order_by: forecast_date
+        }
+        month_agg_correct_2 is {
+            group_by: forecast_date.month
+            aggregate:
+                //Value is 2
+                project_secured_revenue
+            order_by: forecast_date
+        }
+}
