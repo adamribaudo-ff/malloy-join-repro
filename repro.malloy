@@ -26,9 +26,6 @@ extend {
         opportunity_remaining_weighted_amount_daily is 
             pick 0 when opportunity_remaining_days = 0
             else (opportunity_amount * opportunity_likelihood) / opportunity_remaining_days
-    measure: 
-        opportunity_weighted_amount is sum(opportunity_amount * opportunity_likelihood)
-    join_one: project on project_pk = project.pk
 }
 
 
